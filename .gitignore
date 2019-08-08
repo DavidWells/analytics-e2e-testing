@@ -1,0 +1,13 @@
+node_modules
+.tmp
+.sass-cache
+.DS_Store
+npm-debug.log
+tmp
+.projects
+*.orig
+
+screenshots
+videos
+out.js
+examples/*/cypress/logs

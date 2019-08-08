@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Stubbing Google Analytics</title>
+    <script type="text/javascript" src="https://unpkg.com/analytics/dist/analytics.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="https://unpkg.com/analytics-plugin-ga/dist/analytics-plugin-ga.min.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <h1>My Application</h1>
+    <ul>
+      <li><a href="#page2" />#page2</a></li>
+      <li><a href="#page3" />#page3</a></li>
+    </ul>
+    <script>
+      (function(window){
+
+        var uri;
+
+        //Save a handle to original functions
+        var open = XMLHttpRequest.prototype.open;
+        var send = XMLHttpRequest.prototype.send;
+
+        //List of bad sites
+        var blacklist = [
+          "google.com",
+          "facebook.com"
+        ];
+
+        //Function that returns an error string
+        function errorStr() {
+          return ["Url",uri,"was blacklisted!"].join(" ");
+        }
+
+        //Function returns true if url is blacklisted
+        function _filter(url) {
+          for(var i=0;i < blacklist.length;i++) {
+            if(url.indexOf(blacklist[i]) > -1) {
+              return true;
+            }
+          }
+        }
+
+        //Monkey patch open
+        XMLHttpRequest.prototype.open = function() {
+          var method = arguments[0];
+          var url = arguments[1];
+          uri = url;
+          if(_filter(url)) {
+            return;
+          }
+          open.apply(this,[method,url]);
+        }
+
+
+        //Monkey patch send
+        XMLHttpRequest.prototype.send = function() {
+          try {
+            send.call(this,arguments);
+          } catch(er) {
+            console.log(errorStr());
+
+          }
+        }
+        if(window._blacklist === undefined)
+        {
+            window._blacklist = blacklist;
+        }
+        console.log("[Installed]");
+      })(window);
+    </script>
+    <script type="text/javascript">
+      setTimeout(function() {
+        window.foo = 'bar'
+      }, 1000);
+      window.gaplugins = true
+      /* initialize analytics */
+      var Analytics = _analytics.init({
+        app: 'analytics-html-demo',
+        debug: true,
+        version: 100,
+        plugins: [
+          analyticsGA({
+            trackingId: 'UA-126647663-3'
+          })
+        ]
+      })
+      /* Attaching a listener */
+      Analytics.on('*', ({ payload }) => {
+        console.log(`Event ${payload.type}`, payload)
+      })
+    </script>
+    <script>
+      window.onhashchange = function () {
+        ga(function(tracker) {
+          var originalSendHitTask = tracker.get('sendHitTask');
+          tracker.set('sendHitTask', function(model) {
+              var payLoad = model.get('hitPayload');
+              originalSendHitTask(model);
+              var gifRequest = new XMLHttpRequest();
+              var gifPath = "http://localhost/collect";
+              console.log('payLoad', payLoad)
+              gifRequest.open('get', gifPath + '?' + payLoad, true);
+              gifRequest.send();
+          });
+        });
+        Analytics.page()
+      }
+      console.log(window.ga)
+      console.log(window.ga.toString())
+    </script>
+  </body>
+</html>
