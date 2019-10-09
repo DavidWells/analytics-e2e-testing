@@ -4,12 +4,12 @@
   "description": "",
   "scripts": {
     "start": "echo",
-    "cypress:run": "../../node_modules/.bin/cypress run",
-    "cypress:open": "../../node_modules/.bin/cypress open"
+    "test": "../../node_modules/.bin/cypress run",
+    "open": "../../node_modules/.bin/cypress open"
   },
   "dependencies": {
-    "analytics": "^0.1.16",
-    "analytics-plugin-ga": "^0.1.5",
+    "@analytics/google-analytics": "^0.2.0",
+    "analytics": "^0.1.20",
     "on-xmlhttprequest": "^1.0.1"
   },
   "devDependencies": {
