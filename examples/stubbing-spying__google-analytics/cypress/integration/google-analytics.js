@@ -1,15 +1,6 @@
-/* global Cypress, cy */
+/* global Cypress, cy, assert */
 
-// Taken from https://github.com/cypress-io/cypress-example-recipes/tree/master/examples/stubbing-spying__google-analytics
-
-Cypress.on('window:before:load', (win) => {
-  // because this is called before any scripts
-  // have loaded - the ga function is undefined
-  // so we need to create it.
-  // win.ga = cy.stub().as('ga')
-})
-
-// https://docs.cypress.io/guides/guides/stubs-spies-and-clocks.html#Stubs
+// https://docs.cypress.io/guides/references/assertions.html#Sinon-Chai
 
 describe('Google Analytics', function () {
   beforeEach(function () {
@@ -17,44 +8,56 @@ describe('Google Analytics', function () {
   })
 
   it('can ensure window.ga is called correctly', function () {
-    // cy.wait(500)
-    // wait until a global variable has an expected value
 
     cy.waitUntil(() => cy.window().then((win) => {
       // Wait for real google analytics to load
       return (typeof win.ga === 'function')
     }))
 
-    /*
-      Attach spy to real google analytics? win.ga
+    cy.window().then((win) => {
+      /* Spy on window global ‘ga' */
+      cy.spy(win, 'ga').as('ga')
 
-      But how? 🤔
-     */
+      cy.spy(win.Analytics, 'page').as('pageSpy')
 
-    // const spy = cy.spy(obj, 'foo').as('anyArgs')
+      /* HACK to verify first page view. First analytics.page is called before cypress spy attaches ¯\_(ツ)_/¯ */
+      assert.isTrue(win.firstPageViewTriggered, 'this val is true')
 
-    cy
-      .get('@ga')
-      // ensure GA was created with our google analytics ID
-      .should('be.calledWith', 'create', 'UA-126647663-3', 'auto')
-      // and ensure that the initial pageview was sent
-      .and('be.calledWith', 'send', 'pageview')
+      /* initialization already happened
+      cy
+        .get('@ga')
+        // ensure GA was created with our google analytics ID
+        .should('be.calledWith', 'create', 'UA-126647663-3', 'auto')
+        // and ensure that the initial pageview was sent
+        .and('be.calledWith', 'send', 'pageview')
+      */
 
-    // now click the anchor tag which causes a hashchange event
-    cy.contains('#page2').click()
+      /* Navigate to other page */
+      cy.contains('#page2').click()
 
-    cy.hash().should('equal', '#page2')
+      /* Assert analytics.page called once (twice) */
+      cy.get('@pageSpy').should('to.be.calledOnce')
 
-    // make sure GA was sent this pageview
-    cy.get('@ga')
+      /* Ensure hash is correct */
+      cy.hash().should('equal', '#page2')
+
+      /* make sure GA was sent this pageview */
+      cy.get('@ga')
       .should('be.calledWith', 'set', 'page')
       .and('be.calledWith', 'send', 'pageview')
 
-    // and now do it again for page3
-    cy.contains('#page3').click()
-    cy.hash().should('equal', '#page3')
-    cy.get('@ga')
+      /* Navigate to other page */
+      cy.contains('#page3').click()
+      /* Ensure hash is correct */
+      cy.hash().should('equal', '#page3')
+      /* Assert analytics.page called twice (thrice) */
+      cy.get('@pageSpy').should('to.be.calledTwice')
+
+      /* make sure GA was sent this pageview */
+      cy.get('@ga')
       .should('be.calledWith', 'set', 'page')
       .and('be.calledWith', 'send', 'pageview')
+
+    })
   })
 })

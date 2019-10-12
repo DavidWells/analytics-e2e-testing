@@ -29,7 +29,11 @@
         ]
       })
 
-      Analytics.page()
+      Analytics.page(() => {
+        /* HACK to verify first page view. This runs before cypress */
+        window.firstPageViewTriggered = true
+        console.log('page for sure called')
+      })
 
       /* Attaching a listener */
       Analytics.on('*', ({ payload }) => {
@@ -40,8 +44,6 @@
       window.onhashchange = function () {
         Analytics.page()
       }
-      console.log(window.ga)
-      console.log(window.ga.toString())
     </script>
   </body>
 </html>
